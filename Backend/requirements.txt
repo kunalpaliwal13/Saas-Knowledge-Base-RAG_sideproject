@@ -1,0 +1,7 @@
+fastapi
+fastapi[standard]
+faiss-cpu
+numpy
+transformers
+torch
+uvicorn
