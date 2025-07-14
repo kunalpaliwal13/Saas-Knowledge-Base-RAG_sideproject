@@ -5,3 +5,5 @@ numpy
 transformers
 torch
 uvicorn
+pypdf
+google-generativeai
