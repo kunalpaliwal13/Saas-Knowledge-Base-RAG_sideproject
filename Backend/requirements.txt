@@ -7,3 +7,4 @@ torch
 uvicorn
 pypdf
 google-generativeai
+motor

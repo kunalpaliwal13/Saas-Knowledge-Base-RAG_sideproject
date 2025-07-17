@@ -12,12 +12,18 @@ from pypdf import PdfReader
 import google.generativeai as genai
 from dotenv import load_dotenv
 from pydantic import BaseModel
+import motor.motor_asyncio
 
 class AskRequest(BaseModel):
     text: str
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
 load_dotenv()
 
+mongo_url = os.getenv("MONGODB_URL")
 app = FastAPI()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
@@ -30,6 +36,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+client = motor.motor_asyncio.AsyncIOMotorClient(mongo_url)
+db = client.get_database("KB_login")
 
 # Load tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained("BAAI/bge-base-en-v1.5")
@@ -117,7 +126,6 @@ async def upload_file(user_id: int, file: UploadFile = File(...)):
     for i in range(0, len(lines), chunk_size):
         chunks.append(lines[i:i + chunk_size])
 
-    print(chunks)
     for idx, chunk in enumerate(chunks):
         chunk_text = '\n'.join(chunk)
         embedding = get_embedding(chunk_text)
@@ -162,6 +170,20 @@ async def search(user_id: int, query: str = Query(...), k: int = 5):
 
 def format_context(results: list) -> str:
     return "\n\n".join([res.get("text", "") for res in results])
+
+@app.post("/api/login")
+async def login(body: LoginRequest):
+    collection = db.get_collection("0")
+    username = body.username
+    password = body.password
+
+    user = await collection.find_one({"username": username})
+    if (user and password == user.get("password")):
+        return {"user_id": str(user.get("_id"))}
+    else:
+        return {"error": "Invalid username or password"}
+
+
 
 @app.post("/ask/{user_id}")
 async def ask(user_id: int,  body: AskRequest):

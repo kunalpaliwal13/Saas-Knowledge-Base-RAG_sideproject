@@ -34,12 +34,12 @@ const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
 
   try {
     const response = await axios.post(`http://localhost:8000/ask/${userId}`, {
-      message: input,
+      text: input,
     });
 
     const modelMessage: ChatMessage = {
       role: 'model',
-      text: response.data.reply || "No response from AI.",
+      text: response.data.answer || "No response from AI.",
     };
 
     setChat((prev) => [...prev, modelMessage]);
